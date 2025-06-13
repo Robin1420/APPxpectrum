@@ -4,8 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,14 +70,14 @@ class MainActivity : ComponentActivity() {
                             email = backStackEntry.arguments?.getString("email"),
                             telefono = backStackEntry.arguments?.getString("telefono"),
                             codigoVuelo = backStackEntry.arguments?.getString("codigoVuelo"),
-                            fechaReserva = backStackEntry.arguments?.getString("fechaReserva"),
                             fechaSalida = backStackEntry.arguments?.getString("fechaSalida"),
                             horaSalida = backStackEntry.arguments?.getString("horaSalida"),
                             fechaLlegada = backStackEntry.arguments?.getString("fechaLlegada"),
                             horaLlegada = backStackEntry.arguments?.getString("horaLlegada"),
                             precioUSD = backStackEntry.arguments?.getString("precioUSD")?.toDoubleOrNull(),
                             precioPEN = backStackEntry.arguments?.getString("precioPEN")?.toDoubleOrNull(),
-                            tipoPago = backStackEntry.arguments?.getString("tipoPago")
+                            tipoPago = backStackEntry.arguments?.getString("tipoPago"),
+                            fechaReserva = backStackEntry.arguments?.getString("fechaReserva")
                         )
                     }
                 }
@@ -73,23 +86,89 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Pantalla de bienvenida con un botón para comenzar
+// Pantalla de bienvenida con el diseño de la imagen
 @Composable
 fun BienvenidaScreen(navController: NavHostController) {
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        // Centra el contenido en la pantalla
-        Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+    // Definición del degradado de fondo
+    val gradient = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF2C3E50),
+            Color(0xFF1A2530)
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = gradient)
+            .padding(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(bottom = 40.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                // Título de bienvenida
-                Text("¡Bienvenido!", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(24.dp))
-                // Botón para navegar a la lista de vuelos
-                Button(onClick = { navController.navigate("vuelos") }) {
-                    Text("Comenzar")
-                }
+            // Logo/Ilustración (usando un Box con fondo blanco y esquinas redondeadas)
+            Box(
+                modifier = Modifier
+                    .padding(top = 40.dp)
+                    .size(200.dp)
+                    .background(Color.White, shape = RoundedCornerShape(20.dp))
+                    .padding(0.dp),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                // Aquí iría la imagen del logo/ilustración
+                // Por ahora mostramos un texto de marcador de posición
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "Logo de Xpectrum",
+
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(RoundedCornerShape(20.dp)),
+                )
+            }
+
+            // Título de bienvenida
+            Text(
+                text = "¡Bienvenido a Xpectrum!",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 60.dp, bottom = 16.dp)
+            )
+
+            // Subtítulo
+            Text(
+                text = "Tu aplicación para gestionar vuelos y\nescanear boletos de forma rápida y segura",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = Color.White.copy(alpha = 0.8f)
+                ),
+                textAlign = TextAlign.Center,
+                lineHeight = 24.sp,
+                modifier = Modifier.padding(bottom = 60.dp)
+            )
+
+            // Botón de continuar
+            Button(
+                onClick = { navController.navigate("vuelos") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF08121E),  // Color #08121e
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Continuar",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }
@@ -158,9 +237,9 @@ fun ListaVuelosScreen(navController: NavHostController) {
                 VueloItem(
                     vuelo = Vuelo(
                         codigoVuelo = "DEMO123",
-                        fechaSalida = "2025-06-10",
+                        fechaSalida = "2025-06-10T10:00:00",
                         horaSalida = "10:00:00",
-                        fechaLlegada = "2025-06-10",
+                        fechaLlegada = "2025-06-10T12:00:00",
                         horaLlegada = "12:00:00",
                         aeropuertoOrigen = "Aeropuerto Demo",
                         paisOrigen = "País Demo",
@@ -190,9 +269,9 @@ fun VueloItem(vuelo: Vuelo) {
             // Código del vuelo
             Text("Código: ${vuelo.codigoVuelo}", style = MaterialTheme.typography.titleMedium)
             // Fecha y hora de salida
-            Text("Salida: ${vuelo.fechaSalida} ${vuelo.horaSalida}")
+            Text("Salida: ${vuelo.fechaSalidaFormateada} ${vuelo.horaSalida}")
             // Fecha y hora de llegada
-            Text("Llegada: ${vuelo.fechaLlegada} ${vuelo.horaLlegada}")
+            Text("Llegada: ${vuelo.fechaLlegadaFormateada} ${vuelo.horaLlegada}")
             // Origen (aeropuerto y país)
             Text("Origen: ${vuelo.aeropuertoOrigen} (${vuelo.paisOrigen})")
             // Estado del vuelo

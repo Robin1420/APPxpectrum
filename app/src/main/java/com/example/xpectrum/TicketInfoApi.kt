@@ -48,14 +48,14 @@ suspend fun obtenerTicketInfoPorCodigoVuelo(codigoVuelo: String): TicketInfo? = 
                     email = obj.optString("email"),
                     telefono = obj.optString("telefono"),
                     codigoVuelo = obj.optString("codigoVuelo"),
-                    fechaReserva = obj.optString("fechaReserva"),
                     fechaSalida = obj.optString("fechaSalida"),
                     horaSalida = obj.optString("horaSalida"),
                     fechaLlegada = obj.optString("fechaLlegada"),
                     horaLlegada = obj.optString("horaLlegada"),
                     precioUSD = obj.optDouble("precioUSD"),
                     precioPEN = obj.optDouble("precioPEN"),
-                    tipoPago = obj.optString("tipoPago")
+                    tipoPago = obj.optString("tipoPago"),
+                    fechaReserva = obj.optString("fechaReserva")
                 )
             } else if (response.trim().startsWith("[")) {
                 // Si por error la API devuelve un array, busca el objeto correcto
@@ -68,14 +68,14 @@ suspend fun obtenerTicketInfoPorCodigoVuelo(codigoVuelo: String): TicketInfo? = 
                             email = obj.optString("email"),
                             telefono = obj.optString("telefono"),
                             codigoVuelo = obj.optString("codigoVuelo"),
-                            fechaReserva = obj.optString("fechaReserva"),
                             fechaSalida = obj.optString("fechaSalida"),
                             horaSalida = obj.optString("horaSalida"),
                             fechaLlegada = obj.optString("fechaLlegada"),
                             horaLlegada = obj.optString("horaLlegada"),
                             precioUSD = obj.optDouble("precioUSD"),
                             precioPEN = obj.optDouble("precioPEN"),
-                            tipoPago = obj.optString("tipoPago")
+                            tipoPago = obj.optString("tipoPago"),
+                            fechaReserva = obj.optString("fechaReserva")
                         )
                     }
                 }
