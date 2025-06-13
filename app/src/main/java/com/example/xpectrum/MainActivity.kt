@@ -57,14 +57,14 @@ class MainActivity : ComponentActivity() {
                             email = backStackEntry.arguments?.getString("email"),
                             telefono = backStackEntry.arguments?.getString("telefono"),
                             codigoVuelo = backStackEntry.arguments?.getString("codigoVuelo"),
-                            fechaReserva = backStackEntry.arguments?.getString("fechaReserva"),
                             fechaSalida = backStackEntry.arguments?.getString("fechaSalida"),
                             horaSalida = backStackEntry.arguments?.getString("horaSalida"),
                             fechaLlegada = backStackEntry.arguments?.getString("fechaLlegada"),
                             horaLlegada = backStackEntry.arguments?.getString("horaLlegada"),
                             precioUSD = backStackEntry.arguments?.getString("precioUSD")?.toDoubleOrNull(),
                             precioPEN = backStackEntry.arguments?.getString("precioPEN")?.toDoubleOrNull(),
-                            tipoPago = backStackEntry.arguments?.getString("tipoPago")
+                            tipoPago = backStackEntry.arguments?.getString("tipoPago"),
+                            fechaReserva = backStackEntry.arguments?.getString("fechaReserva")
                         )
                     }
                 }
@@ -158,9 +158,9 @@ fun ListaVuelosScreen(navController: NavHostController) {
                 VueloItem(
                     vuelo = Vuelo(
                         codigoVuelo = "DEMO123",
-                        fechaSalida = "2025-06-10",
+                        fechaSalida = "2025-06-10T10:00:00",
                         horaSalida = "10:00:00",
-                        fechaLlegada = "2025-06-10",
+                        fechaLlegada = "2025-06-10T12:00:00",
                         horaLlegada = "12:00:00",
                         aeropuertoOrigen = "Aeropuerto Demo",
                         paisOrigen = "País Demo",
@@ -190,9 +190,9 @@ fun VueloItem(vuelo: Vuelo) {
             // Código del vuelo
             Text("Código: ${vuelo.codigoVuelo}", style = MaterialTheme.typography.titleMedium)
             // Fecha y hora de salida
-            Text("Salida: ${vuelo.fechaSalida} ${vuelo.horaSalida}")
+            Text("Salida: ${vuelo.fechaSalidaFormateada} ${vuelo.horaSalida}")
             // Fecha y hora de llegada
-            Text("Llegada: ${vuelo.fechaLlegada} ${vuelo.horaLlegada}")
+            Text("Llegada: ${vuelo.fechaLlegadaFormateada} ${vuelo.horaLlegada}")
             // Origen (aeropuerto y país)
             Text("Origen: ${vuelo.aeropuertoOrigen} (${vuelo.paisOrigen})")
             // Estado del vuelo

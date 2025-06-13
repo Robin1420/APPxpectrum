@@ -16,17 +16,65 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.google.zxing.integration.android.IntentIntegrator
 import com.journeyapps.barcodescanner.CaptureActivity
 import androidx.compose.ui.platform.LocalContext
-import com.itextpdf.layout.element.Table
-import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Image
+import com.itextpdf.layout.element.Table
+import com.itextpdf.layout.element.Cell
+import com.itextpdf.layout.properties.UnitValue
+import com.itextpdf.layout.properties.VerticalAlignment
+import com.itextpdf.layout.properties.HorizontalAlignment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.example.xpectrum.R
-import androidx.appcompat.content.res.AppCompatResources
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuffXfermode
+import android.graphics.PorterDuff
+import android.graphics.RectF
+import android.graphics.Rect
 
 
 // Pantalla para escanear o cargar QR de boleto (stub funcional)
+// Función para formatear fechas en formato "13 Jun 2025"
+fun formatearFecha(fechaStr: String?): String? {
+    if (fechaStr.isNullOrBlank()) return null
+    
+    return try {
+        // Extraer solo la parte de la fecha (ignorar la hora si existe)
+        val fechaParte = fechaStr.split("T")[0]
+        val partes = fechaParte.split("-")
+        
+        if (partes.size == 3) {
+            val anio = partes[0]
+            val mes = when (partes[1].toInt()) {
+                1 -> "Ene"
+                2 -> "Feb"
+                3 -> "Mar"
+                4 -> "Abr"
+                5 -> "May"
+                6 -> "Jun"
+                7 -> "Jul"
+                8 -> "Ago"
+                9 -> "Sep"
+                10 -> "Oct"
+                11 -> "Nov"
+                12 -> "Dic"
+                else -> partes[1]
+            }
+            val dia = partes[2].toInt().toString() // Eliminar ceros iniciales
+            
+            "$dia $mes $anio"
+        } else {
+            fechaStr
+        }
+    } catch (e: Exception) {
+        android.util.Log.e("FormatoFecha", "Error al formatear fecha: ${e.message}")
+        fechaStr // En caso de error, devolver la fecha original
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoletoScreen(navController: NavHostController) {
@@ -209,14 +257,12 @@ fun TicketInfoScreen(
                     Text("Email: ${email ?: "-"}")
                     Text("Teléfono: ${telefono ?: "-"}")
                     Text("Código Vuelo: ${codigoVuelo ?: "-"}")
-                    Text("Fecha Reserva: ${fechaReserva ?: "-"}")
-                    Text("Fecha Salida: ${fechaSalida ?: "-"}")
-                    Text("Hora Salida: ${horaSalida ?: "-"}")
-                    Text("Fecha Llegada: ${fechaLlegada ?: "-"}")
-                    Text("Hora Llegada: ${horaLlegada ?: "-"}")
+                    Text("Salida: ${formatearFecha(fechaSalida) ?: "-"} ${horaSalida?.substringBeforeLast(":") ?: ""}")
+                    Text("Llegada: ${formatearFecha(fechaLlegada) ?: "-"} ${horaLlegada?.substringBeforeLast(":") ?: ""}")
                     Text("Precio USD: ${precioUSD ?: "-"}")
                     Text("Precio PEN: ${precioPEN ?: "-"}")
                     Text("Tipo de Pago: ${tipoPago ?: "-"}")
+                    Text("Fecha Reserva: ${formatearFecha(fechaReserva) ?: "-"}")
                     Spacer(modifier = Modifier.height(16.dp))
                     val context = LocalContext.current
                     var pdfMessage by remember { mutableStateOf("") }
@@ -236,19 +282,74 @@ fun TicketInfoScreen(
 
                             // Logo desde drawable
                             try {
-                                val drawable = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.logo)
-                                val bitmap = (drawable as android.graphics.drawable.BitmapDrawable).bitmap
+                                // Usar BitmapFactory directamente
+                                // Cargar y ajustar el logo
+                                val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo)
                                 val stream = java.io.ByteArrayOutputStream()
-                                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, stream)
                                 val logoImageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
-                                document.add(Image(logoImageData).setWidth(100f).setAutoScale(true))
+                                
+                                // Función para redondear bordes de la imagen
+                                fun getRoundedBitmap(bitmap: Bitmap, pixels: Int): Bitmap {
+                                    val output = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                                    val canvas = Canvas(output)
+                                    val color = -0xbdbdbe
+                                    val paint = Paint()
+                                    val rect = Rect(0, 0, bitmap.width, bitmap.height)
+                                    val rectF = RectF(rect)
+                                    val roundPx = pixels.toFloat()
+                                    
+                                    paint.isAntiAlias = true
+                                    canvas.drawARGB(0, 0, 0, 0)
+                                    paint.color = color
+                                    canvas.drawRoundRect(rectF, roundPx, roundPx, paint)
+                                    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+                                    canvas.drawBitmap(bitmap, rect, rect, paint)
+                                    return output
+                                }
+                                
+                                // Aplicar bordes redondeados al logo
+                                val roundedBitmap = getRoundedBitmap(bitmap, 200)
+                                val roundedStream = java.io.ByteArrayOutputStream()
+                                roundedBitmap.compress(Bitmap.CompressFormat.PNG, 100, roundedStream)
+                                val roundedLogoData = com.itextpdf.io.image.ImageDataFactory.create(roundedStream.toByteArray())
+                                
+                                // Crear el logo con posición absoluta
+                                val pageSize = pdfDoc.defaultPageSize
+                                val logoWidth = 300f  // Ancho del logo
+                                val logoImage = Image(roundedLogoData)
+                                    .setWidth(logoWidth)
+                                    .setFixedPosition(
+                                        pageSize.width - logoWidth - 50f,  // Posición X (desde la izquierda)
+                                        pageSize.height - 350f,  // Posición Y (desde abajo)
+                                        logoWidth  // Ancho
+                                    )
+                                
+                                // Agregar el logo al documento
+                                document.add(logoImage)
+                                
+                                // Agregar el título debajo del logo
+                                val titleParagraph = Paragraph("XPECTRUM")
+                                    .setFont(bold)
+                                    .setFontSize(28f)
+                                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK)
+                                    .setMarginTop(20f)  // Espacio después del logo
+                                
+                                val subtitleParagraph = Paragraph("Operated by Expectrum Peru")
+                                    .setFont(normal)
+                                    .setFontSize(10f)
+                                    .setMarginBottom(20f)
+                                
+                                document.add(titleParagraph)
+                                document.add(subtitleParagraph)
                             } catch (e: Exception) {
+                                e.printStackTrace()
                                 // Si falla, mostrar solo el texto
                                 document.add(Paragraph("XPECTRUM")
                                     .setFont(bold)
                                     .setFontSize(28f)
                                     .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLUE))
-                                document.add(Paragraph("Operated by VivaAir Peru")
+                                document.add(Paragraph("Operated by Expectrum Peru")
                                     .setFont(normal)
                                     .setFontSize(10f))
                             }
@@ -299,9 +400,16 @@ bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
 val imageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
 document.add(Image(imageData).setWidth(200f).setHeight(50f))
 
-document.add(Paragraph("Trayecto: $origen - $aeropuerto").setFont(bold).setFontSize(20f))
+// Formatear la fecha para el PDF
+val fechaSalidaFormateada = formatearFecha(fechaSalidaStr) ?: ""
+val fechaLlegadaFormateada = formatearFecha(fechaLlegadaStr) ?:""
+val horaSalidaCorta = horaSalidaStr?.substringBeforeLast(":") ?: ""
+val horaLlegadaCorta = horaLlegadaStr?.substringBeforeLast(":") ?: ""
+
+document.add(Paragraph("$origen - $aeropuerto").setFont(bold).setFontSize(20f))
 document.add(Paragraph("\n"))
-document.add(Paragraph("Salida: $fechaSalidaStr $horaSalidaStr").setFont(bold).setFontSize(18f))
+document.add(Paragraph("Salida: $fechaSalidaFormateada $horaSalidaCorta").setFont(bold).setFontSize(14f))
+document.add(Paragraph("Llegada: $fechaLlegadaFormateada $horaLlegadaCorta").setFont(bold).setFontSize(14f))
 document.add(Paragraph("\n"))
 
                             document.add(Paragraph("Recuerda que el artículo personal permitido sin costo por Viva Air es una única pieza de máximo 6 kg y 40x35x25 cm. Exceder las medidas o peso tendrá un costo adicional.").setFont(normal).setFontSize(8f))
